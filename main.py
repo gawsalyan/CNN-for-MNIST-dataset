@@ -8,7 +8,12 @@ if __name__ == "__main__":
     (x_train, y_train, labels_train), (x_test, y_test, labels_test) = get_MNIST()
 
     opt = keras.optimizers.Adam(learning_rate=0.0001)
-    net = init_myCNN(x_train.shape[1:])
+
+    initType = "new"
+    if initType == "load":
+        net = loadmodel("model_name.h5")
+    elif initType == "new":
+        net = init_myCNN(x_train.shape[1:])
 
     history = []
     for session in range(1, 100):
