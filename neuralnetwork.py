@@ -2,17 +2,17 @@ from tensorflow import keras
 import numpy as np
 from keras.utils.vis_utils import plot_model
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout, Input, concatenate
+from keras.models import Model
+from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout, Input, concatenate
 from sklearn.model_selection import KFold
 
 
-def loadmodel(name):
+def load_model(name):
     net = keras.models.load_model(r'name')
     return net
 
 
-def plotHistory(history):
+def plot_history(history):
     plt.figure()
     plt.plot(history.history['loss'], label='training loss')
     plt.plot(history.history['val_loss'], label='validation loss')
@@ -22,11 +22,45 @@ def plotHistory(history):
     plt.show()
 
 
-def kFoldTrain(net, inputs, targets, n_splits=7, batch_size=256, epochs=1, shuffle=True):
-    # Merge inputs and targets
-    # inputs = np.concatenate((x_train, x_test), axis=0)
-    # targets = np.concatenate((y_train, y_test), axis=0)
+def session_train(net, x_train, x_test, y_train, labels_train, y_test, labels_test, type="kFold", saveEvery= True):
+    for session in range(1, 100):
+        if type == "kFold":
+            # Merge inputs and targets
+            inputs = np.concatenate((x_train, x_test), axis=0)
+            targets = np.concatenate((y_train, y_test), axis=0)
 
+            net = kfold_train(net, inputs, targets, n_splits=7, batch_size=256, epochs=1, shuffle=True)
+
+            outputTrains = net.predict(x_train)
+            labels_Trains = np.argmax(outputTrains, axis=1)
+            misclassified = sum(labels_Trains != labels_train)
+            accuracyTrains = 100 * (1 - misclassified / labels_train.size)
+            outputs = net.predict(x_test)
+            labels_predicted = np.argmax(outputs, axis=1)
+            misclassified = sum(labels_predicted != labels_test)
+            print('Percentage misclassified = ', 100 * misclassified / labels_test.size)
+            accuracy = 100 * (1 - misclassified / labels_test.size)
+            print('Percentage accuracy = ', accuracy)
+            name = 'CNN_LG3_' + str(session) + '_TsAcc' + str(round(accuracy, 2)) \
+                   + '_TrAcc' + str(round(accuracyTrains, 2)) + '_CV_ADAM_for_minist.h5'
+        else:
+
+            history = net.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=10, batch_size=1024)
+            outputs = net.predict(x_test)
+            labels_predicted = np.argmax(outputs, axis=1)
+            misclassified = sum(labels_predicted != labels_test)
+            print('Percentage misclassified = ', 100 * misclassified / labels_test.size)
+            accuracy = 100 * (1 - misclassified / labels_test.size)
+            print('Percentage accuracy = ', 100 * (1 - misclassified / labels_test.size))
+            name = 'CNN_LG_' + str(session) + '_' + str(accuracy) + '_for_minist.h5'
+
+        if saveEvery:
+            net.save(name)
+
+    return net
+
+
+def kfold_train(net, inputs, targets, n_splits=7, batch_size=256, epochs=1, shuffle=True):
     # Define the K-fold Cross Validator
     kfold = KFold(n_splits=n_splits, shuffle=shuffle)
 
@@ -55,7 +89,7 @@ def kFoldTrain(net, inputs, targets, n_splits=7, batch_size=256, epochs=1, shuff
     return net
 
 
-def init_myCNN(shapes):
+def init_mycnn(shapes):
     inputlayer = Input(shape=shapes)  # x_train.shape[1:]
 
     pipe1_layer1 = Conv2D(filters=64, kernel_size=(5, 5), activation='relu')(inputlayer)
@@ -84,6 +118,7 @@ def init_myCNN(shapes):
     net = Model(inputs=inputlayer, outputs=outputlayer)
 
     net.summary()
+    opt = keras.optimizers.Adam(learning_rate=0.0001)
     net.compile(loss='categorical_crossentropy', optimizer=opt)
 
     return net

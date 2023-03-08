@@ -1,6 +1,7 @@
+import numpy as np
 from tensorflow import keras
 from loaddata import get_MNIST
-from neuralnetwork import loadmodel, init_myCNN, plotHistory
+from neuralnetwork import load_model, init_mycnn, plot_history
 
 
 if __name__ == "__main__":
@@ -11,9 +12,9 @@ if __name__ == "__main__":
 
     initType = "new"
     if initType == "load":
-        net = loadmodel("model_name.h5")
+        net = load_model("model_name.h5")
     elif initType == "new":
-        net = init_myCNN(x_train.shape[1:])
+        net = init_mycnn(x_train.shape[1:])
 
     history = []
     for session in range(1, 100):
@@ -29,7 +30,7 @@ if __name__ == "__main__":
         accuracy = 100 * (1 - misclassified / labels_test.size)
         print('Percentage accuracy = ', 100 * (1 - misclassified / labels_test.size))
 
-        name = 'CNN_' + str(session) + '_' + str(accuracy) + '_for_minist.h5'
+        name = 'CNN_' + str(session) + '_' + str(accuracy) + '_for_mnist.h5'
         net.save(name)
 
-    plotHistory(history)
+    plot_history(history)

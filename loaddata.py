@@ -1,6 +1,6 @@
 from tensorflow import keras
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.utils import to_categorical
+from keras.datasets import mnist
+from keras.utils import to_categorical
 
 
 def get_MNIST():
