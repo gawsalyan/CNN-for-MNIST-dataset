@@ -11,6 +11,15 @@ def loadmodel(name):
     return net
 
 
+def plotHistory(history):
+    plt.figure()
+    plt.plot(history.history['loss'], label='training loss')
+    plt.plot(history.history['val_loss'], label='validation loss')
+    plt.xlabel('epochs')
+    plt.ylabel('loss')
+    plt.legend()
+    plt.show()
+
 def init_myCNN(shapes):
 
     inputlayer = Input(shape=shapes)    # x_train.shape[1:]
