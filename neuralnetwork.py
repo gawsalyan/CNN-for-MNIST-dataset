@@ -41,5 +41,6 @@ def init_myCNN(shapes):
     net = Model(inputs=inputlayer, outputs=outputlayer)
 
     net.summary()
-    opt = keras.optimizers.Adam(learning_rate=0.0001)
     net.compile(loss='categorical_crossentropy', optimizer=opt)
+
+    return net
