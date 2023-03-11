@@ -22,14 +22,17 @@ def plot_history(history):
     plt.show()
 
 
-def session_train(net, x_train, x_test, y_train, labels_train, y_test, labels_test, type="kFold", saveEvery= True):
-    for session in range(1, 100):
-        if type == "kFold":
+def session_train(net, x_train, y_train, labels_train, x_test, y_test, labels_test, **kwargs):
+
+    history = []
+    for session in range(0, kwargs['session_max']):
+        if kwargs['typeSession'] == "kFold":
             # Merge inputs and targets
             inputs = np.concatenate((x_train, x_test), axis=0)
             targets = np.concatenate((y_train, y_test), axis=0)
 
-            net = kfold_train(net, inputs, targets, n_splits=7, batch_size=256, epochs=1, shuffle=True)
+            net, historyT = kfold_train(net, inputs, targets, **kwargs)
+            history.append(historyT)
 
             outputTrains = net.predict(x_train)
             labels_Trains = np.argmax(outputTrains, axis=1)
@@ -45,7 +48,7 @@ def session_train(net, x_train, x_test, y_train, labels_train, y_test, labels_te
                    + '_TrAcc' + str(round(accuracyTrains, 2)) + '_CV_ADAM_for_minist.h5'
         else:
 
-            history = net.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=10, batch_size=1024)
+            history = net.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=kwargs['epochs'], batch_size=kwargs['batch_size'])
             outputs = net.predict(x_test)
             labels_predicted = np.argmax(outputs, axis=1)
             misclassified = sum(labels_predicted != labels_test)
@@ -54,39 +57,39 @@ def session_train(net, x_train, x_test, y_train, labels_train, y_test, labels_te
             print('Percentage accuracy = ', 100 * (1 - misclassified / labels_test.size))
             name = 'CNN_LG_' + str(session) + '_' + str(accuracy) + '_for_minist.h5'
 
-        if saveEvery:
+        if kwargs['saveEvery']:
             net.save(name)
 
-    return net
+    return net, history
 
 
-def kfold_train(net, inputs, targets, n_splits=7, batch_size=256, epochs=1, shuffle=True):
+def kfold_train(net, inputs, targets, **kwargs):
     # Define the K-fold Cross Validator
-    kfold = KFold(n_splits=n_splits, shuffle=shuffle)
+    kfold = KFold(n_splits=kwargs['n_splits'], shuffle=kwargs['shuffle'])
 
     # K-fold Cross Validation model evaluation
     fold_no = 1
     acc_per_fold = []
     loss_per_fold = []
+    history = []
     for train, test in kfold.split(inputs, targets):
         # Generate a print
         print('------------------------------------------------------------------------')
         print(f'Training for fold {fold_no} ...')
 
         # Fit data to model
-        history = net.fit(inputs[train], targets[train], batch_size=batch_size, epochs=epochs)
+        history.append(net.fit(inputs[train], targets[train], batch_size=kwargs['batch_size'], epochs=kwargs['epochs']))
 
         # Generate generalization metrics
         scores = net.evaluate(inputs[test], targets[test], verbose=0)
-        print(
-            f'Score for fold {fold_no}: {net.metrics_names[0]} of {scores[0]}; {net.metrics_names[1]} of {scores[1] * 100}%')
+        print(f'Score for fold {fold_no}: {net.metrics_names[0]} of {scores[0]}; {net.metrics_names[1]} of {scores[1] * 100}%')
         acc_per_fold.append(scores[1] * 100)
         loss_per_fold.append(scores[0])
 
         # Increase fold number
         fold_no = fold_no + 1
 
-    return net
+    return net, history
 
 
 def init_mycnn(shapes):
